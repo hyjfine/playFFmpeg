@@ -47,8 +47,8 @@ public class FFVideoView extends SurfaceView {
             @Override
             public void run() {
                 Log.d("FFVideoView", "-----run: playVideo");
-                String videoPath2 = Environment.getExternalStorageDirectory() + "/testMPEG/test2.mp4";
-                FFUtils.playVideo(videoPath2, mSurface);
+                String videoPath2 = Environment.getExternalStorageDirectory() + "/testMPEG/124840.264";
+                FFUtils.playVideo2(videoPath2, mSurface);
             }
         }).start();
     }

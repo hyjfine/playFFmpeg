@@ -16,4 +16,8 @@ public class FFUtils {
     public static native String avFilterInfo();
 
     public static native void playVideo(String videoPath, Surface surface);
+
+    public static native void playVideo2(String videoPath, Surface surface);
+
+    public static native void makeMp4(String rawPath);
 }

@@ -7,6 +7,7 @@
 
 #include "log_util.h"
 
+
 extern "C" {
 #include "libavformat/version.h"
 #include "libavcodec/avcodec.h"
@@ -16,6 +17,11 @@ extern "C" {
 #include "libswresample/swresample.h"
 #include "libavutil/opt.h"
 #include <libavutil/imgutils.h>
+
+#include "Muxer.h"
+#include "NALUParser.h"
+#include "core_player.h"
+
 }
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -120,6 +126,95 @@ Java_com_example_testffmpeg2_FFUtils_avFilterInfo(JNIEnv *env, jclass clazz) {
 //    }
 //    LOGI("%s", info);
     return env->NewStringUTF(info);
+}
+
+static void parser_callback(void *opaque, Nalu *nalu) {
+    dump_nalu(nalu);
+    Player *player = (Player *) opaque;
+    player_write_video_frame(player, nalu->data, nalu->size);
+}
+
+// native window
+ANativeWindow *nativeWindow;
+ANativeWindow_Buffer windowBuffer;
+
+static void
+render_frame(void *opaque, uint8_t *const data[8], const int size[8]) {
+
+    ANativeWindow_lock(nativeWindow, &windowBuffer, NULL);
+
+    // 获取stride
+    uint8_t *dst = (uint8_t *) windowBuffer.bits;
+    uint8_t *src = data[0];
+    int dstStride = windowBuffer.stride * 4;
+    int srcStride = size[0];
+    LOGD("-----stride %d %d", dstStride, srcStride);
+
+    // 由于window的stride和帧的stride不同,因此需要逐行复制
+    for (int i = 0; i < 1376; i++) {
+        memcpy(dst + i * dstStride, src + i * srcStride, srcStride);
+    }
+    usleep(0.05 * 1000000);
+    ANativeWindow_unlockAndPost(nativeWindow);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_testffmpeg2_FFUtils_playVideo2(JNIEnv *env, jclass clazz, jstring video_path,
+                                                jobject surface) {
+    const char *videoPath = env->GetStringUTFChars(video_path, 0);
+    LOGI("PlayVideo: %s", videoPath);
+
+    if (videoPath == NULL) {
+        LOGE("videoPath is null");
+        return;
+    }
+
+    FILE *file = fopen(videoPath, "r");
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    //----
+    AVFrame *renderFrame = av_frame_alloc();
+
+    if (renderFrame == NULL) {
+        LOGD("Could not allocate video frame.");
+        return;
+    }
+
+    nativeWindow = ANativeWindow_fromSurface(env, surface);
+
+    // get video width , height
+    LOGI("get video width , height");
+    int videoWidth = 1536;
+    int videoHeight = 1376;
+    LOGI("VideoSize: [%d,%d]", videoWidth, videoHeight);
+
+    // 设置native window的buffer大小,可自动拉伸
+    LOGI("set native window");
+    ANativeWindow_setBuffersGeometry(nativeWindow, videoWidth, videoHeight,
+                                     WINDOW_FORMAT_RGBA_8888);
+
+
+    uint8_t *data = (uint8_t *) malloc(length);
+    fread(data, length, 1, file);
+    fclose(file);
+
+    PlayerContext *context = NULL;
+    Player *player = player_alloc(&context);
+    context->video_callback = render_frame;
+    player_open(player);
+
+    NaluParser *parser = parser_alloc();
+    parser->opaque = player;
+    parser->callback = parser_callback;
+
+    parser_parse(parser, data, length);
+
+    player_close(player);
+    player_free(&player);
+
 }
 
 extern "C"
@@ -285,6 +380,7 @@ Java_com_example_testffmpeg2_FFUtils_playVideo(JNIEnv *env, jclass clazz, jstrin
                     uint8_t *src = (renderFrame->data[0]);
                     int dstStride = windowBuffer.stride * 4;
                     int srcStride = renderFrame->linesize[0];
+                    LOGD("-----stride %d %d", dstStride, srcStride);
 
                     // 由于window的stride和帧的stride不同,因此需要逐行复制
                     for (int i = 0; i < videoHeight; i++) {
@@ -314,6 +410,7 @@ Java_com_example_testffmpeg2_FFUtils_playVideo(JNIEnv *env, jclass clazz, jstrin
             }
 
         }
+//        usleep(0.05 * 1000000);
         av_packet_unref(packet);
     }
 
@@ -329,4 +426,33 @@ Java_com_example_testffmpeg2_FFUtils_playVideo(JNIEnv *env, jclass clazz, jstrin
     avformat_close_input(&formatContext);
     avformat_free_context(formatContext);
     env->ReleaseStringUTFChars(video_path, videoPath);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_testffmpeg2_FFUtils_makeMp4(JNIEnv *env, jclass clazz, jstring raw_path) {
+
+    const char *videoPath = env->GetStringUTFChars(raw_path, 0);
+    LOGI("make mp4 path : %s", videoPath);
+
+    if (videoPath == NULL) {
+        LOGE("videoPath is null");
+        return;
+    }
+
+    FILE *file = fopen(videoPath, "r");
+
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    uint8_t *data = (uint8_t *) malloc(length);
+    fread(data, length, 1, file);
+
+    Muxer *muxer = muxer_alloc("/storage/emulated/0/testMPEG/testMuxer1.mp4");
+    muxer_open(muxer);
+    int ret = muxer_write_video_frame(muxer, data, length);
+    muxer_close(muxer);
+    muxer_free(muxer);
+    LOGD("-----makeMp4 %u length %li", ret, length);
+
 }

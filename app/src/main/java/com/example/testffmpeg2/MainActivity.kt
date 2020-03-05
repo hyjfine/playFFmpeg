@@ -3,7 +3,6 @@ package com.example.testffmpeg2
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
@@ -55,7 +54,11 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "-----click codec")
             setInfoText(FFUtils.avCodecInfo())
         }
-        findViewById<Button>(R.id.button_filter).setOnClickListener { setInfoText(FFUtils.avFilterInfo()) }
+        findViewById<Button>(R.id.button_filter).setOnClickListener {
+            //            setInfoText(FFUtils.avFilterInfo())
+            val rawPath = "sdcard/testMPEG/124840.264"
+            FFUtils.makeMp4(rawPath)
+        }
         findViewById<Button>(R.id.button_format).setOnClickListener { setInfoText(FFUtils.avFormatInfo()) }
         findViewById<Button>(R.id.button_play).setOnClickListener {
             val videoPath = "sdcard/testMPEG/test.mp4"
