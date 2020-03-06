@@ -151,7 +151,7 @@ render_frame(void *opaque, uint8_t *const data[8], const int size[8]) {
     uint8_t *src = data[0];
     int dstStride = windowBuffer.stride * 4;
     int srcStride = size[0];
-    LOGD("-----stride %d %d", dstStride, srcStride);
+//    LOGD("-----stride %d %d", dstStride, srcStride);
 
     // 由于window的stride和帧的stride不同,因此需要逐行复制
     for (int i = 0; i < 1376; i++) {

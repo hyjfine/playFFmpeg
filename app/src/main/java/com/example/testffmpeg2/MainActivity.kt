@@ -6,8 +6,7 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
-import android.os.Bundle
-import android.os.Environment
+import android.os.*
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
@@ -16,6 +15,7 @@ import androidx.core.app.ActivityCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.FileInputStream
+import java.lang.ref.WeakReference
 
 
 class MainActivity : AppCompatActivity() {
@@ -26,6 +26,9 @@ class MainActivity : AppCompatActivity() {
         Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
 
+    private lateinit var dashboardHandler: Handler
+    private val outClass = WeakReference<MainActivity>(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -35,6 +38,7 @@ class MainActivity : AppCompatActivity() {
         // Example of a call to a native method
         sample_text.text = stringFromJNI()
         setupListener()
+        dashboardHandler = MyHandle(outClass)
 
         ActivityCompat.requestPermissions(this, permissions, 3);
     }
@@ -66,7 +70,11 @@ class MainActivity : AppCompatActivity() {
             //            setInfoText(FFUtils.avFilterInfo())
 //            val rawPath = "sdcard/testMPEG/124840.264"
 //            FFUtils.makeMp4(rawPath)
-            playStream()
+//            playStream()
+
+//            startCountTime()
+
+            startCount2(true)
         }
         findViewById<Button>(R.id.button_format).setOnClickListener { setInfoText(FFUtils.avFormatInfo()) }
         findViewById<Button>(R.id.button_play).setOnClickListener {
@@ -98,6 +106,7 @@ class MainActivity : AppCompatActivity() {
         val videoPath2 =
             Environment.getExternalStorageDirectory().toString() + "/testMPEG/record_temp_agc.pcm"
         val file = File(videoPath2)
+        Log.d(TAG, "------playStream minBufferSize $minBufferSize")
         try {
             val fileInputStream = FileInputStream(file)
             val tempBuffer = ByteArray(minBufferSize)
@@ -119,6 +128,40 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private var count = 0
+    private var countTime: CountDownTimer? = null
+    private fun startCountTime(start: Boolean = true) {
+        if (start) {
+            count = 0
+            if (countTime == null) {
+                countTime = CountTime(1 * 1000, 50) {
+                    count += 1
+                    Log.d(TAG, "------startCountTime count $count")
+                }
+            }
+            countTime?.start()
+        } else {
+            countTime?.cancel()
+        }
+    }
+
+    private var startTS = 0L
+    private fun startCount2(start: Boolean = false) {
+        if (start) {
+            count = 0
+            startTS = System.currentTimeMillis()
+        } else {
+            if (System.currentTimeMillis() - startTS > 1000) {
+                dashboardHandler.removeMessages(HANDLER_M)
+                return
+            }
+            count += 1
+            Log.d(TAG, "------startCount2 count $count")
+        }
+        dashboardHandler.removeMessages(HANDLER_M)
+        dashboardHandler.sendEmptyMessageDelayed(HANDLER_M, 50)
+    }
+
 
     private fun setInfoText(text: String) {
         mTextView.text = text
@@ -130,7 +173,34 @@ class MainActivity : AppCompatActivity() {
      */
     private external fun stringFromJNI(): String
 
+    class CountTime(
+        millisInFuture: Long,
+        countDownInterval: Long,
+        private val callback: (Long) -> Unit
+    ) :
+        CountDownTimer(millisInFuture, countDownInterval) {
+        override fun onFinish() {
+            Log.d("CountTime", "-----onFinish")
+        }
+
+        override fun onTick(millisUntilFinished: Long) {
+            callback(millisUntilFinished)
+            Log.d("CountTime", "-----millisUntilFinished $millisUntilFinished")
+        }
+
+    }
+
+    class MyHandle(private val outClass: WeakReference<MainActivity>) : Handler() {
+        override fun handleMessage(msg: Message) {
+            super.handleMessage(msg)
+            outClass.get()?.startCount2()
+
+            Log.d(TAG, "----handle message ${msg.what}")
+        }
+    }
+
     companion object {
+        const val HANDLER_M = 1
         const val TAG = "MainActivity"
         const val SAMPLE_RATE_INHZ = 8000
         const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
@@ -140,9 +210,9 @@ class MainActivity : AppCompatActivity() {
         init {
             System.loadLibrary("native-lib")
 
-            listOf("avutil", "avcodec", "avformat", "swresample", "swscale").forEach {
-                System.loadLibrary(it)
-            }
+//            listOf("avutil", "avcodec", "avformat", "swresample", "swscale").forEach {
+//                System.loadLibrary(it)
+//            }
         }
     }
 }
