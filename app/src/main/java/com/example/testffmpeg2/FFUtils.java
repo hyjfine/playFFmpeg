@@ -20,4 +20,8 @@ public class FFUtils {
     public static native void playVideo2(String videoPath, Surface surface);
 
     public static native void makeMp4(String rawPath);
+
+    public static native void startQueue();
+
+    public static native void popQueue();
 }

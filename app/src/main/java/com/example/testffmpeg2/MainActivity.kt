@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
         mVideoView = findViewById(R.id.videoView)
 
         // Example of a call to a native method
-        sample_text.text = stringFromJNI()
+        sample_text2.text = stringFromJNI()
         setupListener()
         dashboardHandler = MyHandle(outClass)
 
@@ -80,6 +80,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.button_play).setOnClickListener {
             val videoPath = "sdcard/testMPEG/test.mp4"
             mVideoView.playVideo(videoPath)
+        }
+        findViewById<Button>(R.id.startQueue).setOnClickListener {
+            FFUtils.startQueue()
+        }
+        findViewById<Button>(R.id.popQueue).setOnClickListener {
+            FFUtils.popQueue()
         }
     }
 
@@ -151,10 +157,11 @@ class MainActivity : AppCompatActivity() {
             count = 0
             startTS = System.currentTimeMillis()
         } else {
-            if (System.currentTimeMillis() - startTS > 1000) {
+            if (System.currentTimeMillis() - startTS > 15000) {
                 dashboardHandler.removeMessages(HANDLER_M)
                 return
             }
+            FFUtils.popQueue()
             count += 1
             Log.d(TAG, "------startCount2 count $count")
         }

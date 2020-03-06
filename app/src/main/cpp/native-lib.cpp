@@ -4,6 +4,7 @@
 #include <android/native_window_jni.h>
 #include <string>
 #include <unistd.h>
+#include <queue>
 
 #include "log_util.h"
 
@@ -26,6 +27,11 @@ extern "C" {
 #include "core_player.h"
 
 }
+
+struct RenderFrameVideo {
+    uint8_t *data[8];
+    int size[8];
+};
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_testffmpeg2_MainActivity_stringFromJNI(
@@ -140,6 +146,12 @@ static void parser_callback(void *opaque, Nalu *nalu) {
 // native window
 ANativeWindow *nativeWindow;
 ANativeWindow_Buffer windowBuffer;
+std::queue<RenderFrameVideo> queueVideo;
+
+static void clearFV(std::queue<RenderFrameVideo> &q) {
+    std::queue<RenderFrameVideo> empty;
+    swap(empty, q);
+}
 
 static void
 render_frame(void *opaque, uint8_t *const data[8], const int size[8]) {
@@ -159,6 +171,50 @@ render_frame(void *opaque, uint8_t *const data[8], const int size[8]) {
     }
     usleep(0.05 * 1000000);
     ANativeWindow_unlockAndPost(nativeWindow);
+}
+
+static void
+render_frame_data(RenderFrameVideo renderFrameVideo) {
+
+    ANativeWindow_lock(nativeWindow, &windowBuffer, NULL);
+
+    // 获取stride
+    uint8_t *dst = (uint8_t *) windowBuffer.bits;
+    uint8_t *src = renderFrameVideo.data[0];
+    int dstStride = windowBuffer.stride * 4;
+    int srcStride = renderFrameVideo.size[0];
+
+    LOGD("-----%x %d  || ", renderFrameVideo.data[0], renderFrameVideo.size[0] );
+
+    // 由于window的stride和帧的stride不同,因此需要逐行复制
+    for (int i = 0; i < 1376; i++) {
+        memcpy(dst + i * dstStride, src + i * srcStride, srcStride);
+    }
+//    usleep(0.05 * 1000000);
+    ANativeWindow_unlockAndPost(nativeWindow);
+    av_freep(renderFrameVideo.data);
+}
+
+static void
+queue_data_add_video(void *opaque, uint8_t *const data[8], const int size[8]) {
+    RenderFrameVideo frameVideo = RenderFrameVideo();
+    frameVideo.data[0] = (uint8_t *)(malloc(size[0] * 1376));
+//    frameVideo.data[1] = static_cast<uint8_t *>(malloc(size[1] * 1376));
+//    frameVideo.data[2] = static_cast<uint8_t *>(malloc(size[2] * 1376));
+//    frameVideo.data[3] = static_cast<uint8_t *>(malloc(size[3] * 1376));
+    frameVideo.size[0] = size[0];
+//    frameVideo.size[1] = size[1];
+//    frameVideo.size[2] = size[2];
+//    frameVideo.size[3] = size[3];
+    memcpy(frameVideo.data[0], data[0], size[0] * 1376);
+//    memcpy(frameVideo.data[1], data[1], size[1]);
+//    memcpy(frameVideo.data[2], data[2], size[2]);
+//    memcpy(frameVideo.data[3], data[3], size[3]);
+
+//    memcpy(frameVideo.data, data, sizeof(uint8_t) * 8);
+//    memcpy(frameVideo.size, size, sizeof(int) * 8);
+    queueVideo.push(frameVideo);
+    LOGD("-------queue data size %ld", queueVideo.size());
 }
 
 extern "C"
@@ -206,7 +262,8 @@ Java_com_example_testffmpeg2_FFUtils_playVideo2(JNIEnv *env, jclass clazz, jstri
 
     PlayerContext *context = NULL;
     Player *player = player_alloc(&context);
-    context->video_callback = render_frame;
+    context->video_callback = queue_data_add_video;
+//    context->video_callback = render_frame;
     player_open(player);
 
     NaluParser *parser = parser_alloc();
@@ -458,4 +515,50 @@ Java_com_example_testffmpeg2_FFUtils_makeMp4(JNIEnv *env, jclass clazz, jstring 
     muxer_free(muxer);
     LOGD("-----makeMp4 %u length %li", ret, length);
 
+}
+
+struct Books {
+    char title[50];
+    char author[50];
+    int bookId;
+};
+
+std::queue<Books> queue1;
+
+void testQueue() {
+    clearFV(queueVideo);
+    for (int i = 0; i < 10; ++i) {
+        Books books = Books();
+        books.bookId = i;
+        queue1.push(books);
+    }
+    LOGD("-----testQueue queue size %ld", queue1.size());
+}
+
+void popQueue() {
+
+    if (!queueVideo.empty()) {
+//        Books books = queue1.front();
+//        queue1.pop();
+
+        RenderFrameVideo frameVideo = queueVideo.front();
+        render_frame_data(frameVideo);
+        queueVideo.pop();
+        LOGD("-----popQueue size %ld %c isEmpty %d", queueVideo.size(), *frameVideo.data[0],
+             queueVideo.empty());
+    } else {
+        LOGD("------popQueue empty!!!");
+    }
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_testffmpeg2_FFUtils_startQueue(JNIEnv *env, jclass clazz) {
+    testQueue();
+}extern "C"
+
+JNIEXPORT void JNICALL
+Java_com_example_testffmpeg2_FFUtils_popQueue(JNIEnv *env, jclass clazz) {
+    popQueue();
 }
