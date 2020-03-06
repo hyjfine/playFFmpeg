@@ -7,6 +7,9 @@
 
 #include "log_util.h"
 
+// for native media
+#include <OMXAL/OpenMAXAL.h>
+#include <OMXAL/OpenMAXAL_Android.h>
 
 extern "C" {
 #include "libavformat/version.h"
