@@ -93,7 +93,11 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.testByteArray).setOnClickListener {
             val array = FFUtils.testByteArray()
-//                Log.d(TAG, "------byte array $data")
+            dashboardHandler.post { audioTrack.write(array,0, array.size) }
+            Log.d(TAG, "------array size ${array.size}")
+            for (i in 1..30) {
+                Log.d(TAG, "------byte array ${array[i]}")
+            }
 //            for (data in array) {
 //            }
         }
@@ -175,7 +179,8 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             FFUtils.popQueue()
-            audioTrack.write(bufferAudio, bufferAudio.remaining(), AudioTrack.WRITE_NON_BLOCKING)
+            val array = FFUtils.testByteArray()
+            dashboardHandler.post { audioTrack.write(array,0, array.size) }
             count += 1
             Log.d(TAG, "------startCount2 count $count")
         }
