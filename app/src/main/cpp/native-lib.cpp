@@ -551,14 +551,50 @@ void popQueue() {
     }
 
 }
+unsigned  char* audio_buffer = NULL;
+FILE *fileAudio = NULL;
+int length = 0;
+void getBuff() {
+    if (fileAudio == NULL) {
+        LOGD("-------getBuff fileAudio null");
+        return;
+    }
+    long currentPos = ftell(fileAudio);
+    LOGD("-----getBuff currentPos %ld", currentPos);
+    fread(audio_buffer, 360, 1, fileAudio);
+
+}
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_testffmpeg2_FFUtils_startQueue(JNIEnv *env, jclass clazz) {
-    testQueue();
-}extern "C"
+Java_com_example_testffmpeg2_FFUtils_startQueue(JNIEnv *env, jclass clazz, jobject buffer1) {
 
+    if (audio_buffer == NULL) {
+        void * buffer = env->GetDirectBufferAddress(buffer1);
+        audio_buffer = (unsigned char *)buffer;
+    }
+    fileAudio = fopen("/sdcard/testMPEG/record_temp_agc.pcm", "rb");
+    if (fileAudio == NULL) {
+        LOGD("-----startQueue fileAudio open failed");
+    } else{
+        LOGD("-----startQueue fileAudio open success");
+    }
+    testQueue();
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_testffmpeg2_FFUtils_popQueue(JNIEnv *env, jclass clazz) {
     popQueue();
+    getBuff();
+}
+
+
+extern "C"
+JNIEXPORT jbyteArray JNICALL
+Java_com_example_testffmpeg2_FFUtils_testByteArray(JNIEnv *env, jclass clazz) {
+    jbyte  buff[] = {1,2,3,5};
+    jbyteArray ret = env->NewByteArray(4);
+    env->SetByteArrayRegion(ret, 0, 4, buff);
+    return ret;
 }

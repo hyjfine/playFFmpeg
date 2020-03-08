@@ -108,6 +108,13 @@
         android:text="popQueue"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/startQueue" />
+    <Button
+        android:id="@+id/testByteArray"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="byteArray"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/popQueue" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

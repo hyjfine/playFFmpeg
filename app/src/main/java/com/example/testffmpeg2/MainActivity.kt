@@ -16,6 +16,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.FileInputStream
 import java.lang.ref.WeakReference
+import java.nio.ByteBuffer
 
 
 class MainActivity : AppCompatActivity() {
@@ -75,6 +76,7 @@ class MainActivity : AppCompatActivity() {
 //            startCountTime()
 
             startCount2(true)
+            playStream()
         }
         findViewById<Button>(R.id.button_format).setOnClickListener { setInfoText(FFUtils.avFormatInfo()) }
         findViewById<Button>(R.id.button_play).setOnClickListener {
@@ -82,19 +84,30 @@ class MainActivity : AppCompatActivity() {
             mVideoView.playVideo(videoPath)
         }
         findViewById<Button>(R.id.startQueue).setOnClickListener {
-            FFUtils.startQueue()
+            FFUtils.startQueue(bufferAudio)
+            playStream()
         }
         findViewById<Button>(R.id.popQueue).setOnClickListener {
             FFUtils.popQueue()
+            audioTrack.write(bufferAudio, 0, AudioTrack.WRITE_NON_BLOCKING)
         }
+        findViewById<Button>(R.id.testByteArray).setOnClickListener {
+            val array = FFUtils.testByteArray()
+//                Log.d(TAG, "------byte array $data")
+//            for (data in array) {
+//            }
+        }
+
     }
 
 
+    private val bufferAudio = ByteBuffer.allocateDirect(360)
+    private lateinit var audioTrack: AudioTrack
     private fun playStream() {
         val channelConfig = AudioFormat.CHANNEL_OUT_MONO
         val minBufferSize =
             AudioTrack.getMinBufferSize(SAMPLE_RATE_INHZ, channelConfig, AUDIO_FORMAT)
-        val audioTrack = AudioTrack(
+        audioTrack = AudioTrack(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -109,27 +122,27 @@ class MainActivity : AppCompatActivity() {
         )
         audioTrack.play()
 
-        val videoPath2 =
-            Environment.getExternalStorageDirectory().toString() + "/testMPEG/record_temp_agc.pcm"
-        val file = File(videoPath2)
-        Log.d(TAG, "------playStream minBufferSize $minBufferSize")
-        try {
-            val fileInputStream = FileInputStream(file)
-            val tempBuffer = ByteArray(minBufferSize)
-            while (fileInputStream.available() > 0) {
-                val readCount = fileInputStream.read(tempBuffer)
-                if (readCount == AudioTrack.ERROR_INVALID_OPERATION ||
-                    readCount == AudioTrack.ERROR_BAD_VALUE
-                ) {
-                    continue
-                }
-                if (readCount != 0 && readCount != -1) {
-                    audioTrack.write(tempBuffer, 0, readCount)
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+//        val videoPath2 =
+//            Environment.getExternalStorageDirectory().toString() + "/testMPEG/record_temp_agc.pcm"
+//        val file = File(videoPath2)
+//        Log.d(TAG, "------playStream minBufferSize $minBufferSize")
+//        try {
+//            val fileInputStream = FileInputStream(file)
+//            val tempBuffer = ByteArray(minBufferSize)
+//            while (fileInputStream.available() > 0) {
+//                val readCount = fileInputStream.read(tempBuffer)
+//                if (readCount == AudioTrack.ERROR_INVALID_OPERATION ||
+//                    readCount == AudioTrack.ERROR_BAD_VALUE
+//                ) {
+//                    continue
+//                }
+//                if (readCount != 0 && readCount != -1) {
+//                    audioTrack.write(tempBuffer, 0, readCount)
+//                }
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
 
 
     }
@@ -162,6 +175,7 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             FFUtils.popQueue()
+            audioTrack.write(bufferAudio, bufferAudio.remaining(), AudioTrack.WRITE_NON_BLOCKING)
             count += 1
             Log.d(TAG, "------startCount2 count $count")
         }
