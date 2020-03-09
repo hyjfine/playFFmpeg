@@ -116,5 +116,13 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/popQueue" />
 
+    <Button
+        android:id="@+id/playLocal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="localAudio"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/testByteArray" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

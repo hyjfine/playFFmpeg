@@ -184,7 +184,7 @@ render_frame_data(RenderFrameVideo renderFrameVideo) {
     int dstStride = windowBuffer.stride * 4;
     int srcStride = renderFrameVideo.size[0];
 
-    LOGD("-----%x %d  || ", renderFrameVideo.data[0], renderFrameVideo.size[0] );
+    LOGD("-----%x %d  || ", renderFrameVideo.data[0], renderFrameVideo.size[0]);
 
     // 由于window的stride和帧的stride不同,因此需要逐行复制
     for (int i = 0; i < 1376; i++) {
@@ -198,7 +198,7 @@ render_frame_data(RenderFrameVideo renderFrameVideo) {
 static void
 queue_data_add_video(void *opaque, uint8_t *const data[8], const int size[8]) {
     RenderFrameVideo frameVideo = RenderFrameVideo();
-    frameVideo.data[0] = (uint8_t *)(malloc(size[0] * 1376));
+    frameVideo.data[0] = (uint8_t *) (malloc(size[0] * 1376));
 //    frameVideo.data[1] = static_cast<uint8_t *>(malloc(size[1] * 1376));
 //    frameVideo.data[2] = static_cast<uint8_t *>(malloc(size[2] * 1376));
 //    frameVideo.data[3] = static_cast<uint8_t *>(malloc(size[3] * 1376));
@@ -551,12 +551,14 @@ void popQueue() {
     }
 
 }
+
 int audio_byte_count = 1024;
-unsigned  char* audio_buffer = NULL;
-jbyte *audio_array = (jbyte *)malloc(audio_byte_count);
+unsigned char *audio_buffer = NULL;
+jbyte *audio_array = (jbyte *) malloc(audio_byte_count);
 
 FILE *fileAudio = NULL;
 int length = 0;
+
 void getBuff() {
     if (fileAudio == NULL) {
         LOGD("-------getBuff fileAudio null");
@@ -574,16 +576,16 @@ JNIEXPORT void JNICALL
 Java_com_example_testffmpeg2_FFUtils_startQueue(JNIEnv *env, jclass clazz, jobject buffer1) {
 
     if (audio_buffer == NULL) {
-        void * buffer = env->GetDirectBufferAddress(buffer1);
-        audio_buffer = (unsigned char *)buffer;
+        void *buffer = env->GetDirectBufferAddress(buffer1);
+        audio_buffer = (unsigned char *) buffer;
     }
-    if (fileAudio == NULL){
+    if (fileAudio == NULL) {
         fileAudio = fopen("/sdcard/testMPEG/record_temp_agc.pcm", "rb");
     }
     fseek(fileAudio, 0, SEEK_SET);
     if (fileAudio == NULL) {
         LOGD("-----startQueue fileAudio open failed");
-    } else{
+    } else {
         LOGD("-----startQueue fileAudio open success");
     }
     testQueue();
@@ -604,6 +606,6 @@ Java_com_example_testffmpeg2_FFUtils_testByteArray(JNIEnv *env, jclass clazz) {
     jbyteArray ret = env->NewByteArray(audio_byte_count);
     env->SetByteArrayRegion(ret, 0, audio_byte_count, audio_array);
 //    env->DeleteLocalRef(ret);
-    env->ReleaseByteArrayElements(ret, audio_array, JNI_OK);
+    env->ReleaseByteArrayElements(ret, audio_array, 0);
     return ret;
 }

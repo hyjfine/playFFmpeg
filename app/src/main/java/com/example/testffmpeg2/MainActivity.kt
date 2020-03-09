@@ -75,8 +75,8 @@ class MainActivity : AppCompatActivity() {
 
 //            startCountTime()
 
+            setupAudioTrack()
             startCount2(true)
-            playStream()
         }
         findViewById<Button>(R.id.button_format).setOnClickListener { setInfoText(FFUtils.avFormatInfo()) }
         findViewById<Button>(R.id.button_play).setOnClickListener {
@@ -85,7 +85,6 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.startQueue).setOnClickListener {
             FFUtils.startQueue(bufferAudio)
-            playStream()
         }
         findViewById<Button>(R.id.popQueue).setOnClickListener {
             FFUtils.popQueue()
@@ -93,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.testByteArray).setOnClickListener {
             val array = FFUtils.testByteArray()
-            dashboardHandler.post { audioTrack.write(array,0, array.size) }
+            dashboardHandler.post { audioTrack.write(array, 0, array.size) }
             Log.d(TAG, "------array size ${array.size}")
             for (i in 1..30) {
                 Log.d(TAG, "------byte array ${array[i]}")
@@ -101,16 +100,22 @@ class MainActivity : AppCompatActivity() {
 //            for (data in array) {
 //            }
         }
+        findViewById<Button>(R.id.playLocal).setOnClickListener {
+            setupAudioTrack()
+            playAudioFile()
+        }
 
     }
 
-
     private val bufferAudio = ByteBuffer.allocateDirect(360)
     private lateinit var audioTrack: AudioTrack
-    private fun playStream() {
+    private lateinit var tempBuffer: ByteArray
+    private fun setupAudioTrack() {
+        if (::audioTrack.isInitialized) return
         val channelConfig = AudioFormat.CHANNEL_OUT_MONO
         val minBufferSize =
             AudioTrack.getMinBufferSize(SAMPLE_RATE_INHZ, channelConfig, AUDIO_FORMAT)
+        tempBuffer = ByteArray(minBufferSize)
         audioTrack = AudioTrack(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -125,29 +130,29 @@ class MainActivity : AppCompatActivity() {
             AudioManager.AUDIO_SESSION_ID_GENERATE
         )
         audioTrack.play()
+        Log.d(TAG, "------setupAudioTrack minBufferSize $minBufferSize")
+    }
 
-//        val videoPath2 =
-//            Environment.getExternalStorageDirectory().toString() + "/testMPEG/record_temp_agc.pcm"
-//        val file = File(videoPath2)
-//        Log.d(TAG, "------playStream minBufferSize $minBufferSize")
-//        try {
-//            val fileInputStream = FileInputStream(file)
-//            val tempBuffer = ByteArray(minBufferSize)
-//            while (fileInputStream.available() > 0) {
-//                val readCount = fileInputStream.read(tempBuffer)
-//                if (readCount == AudioTrack.ERROR_INVALID_OPERATION ||
-//                    readCount == AudioTrack.ERROR_BAD_VALUE
-//                ) {
-//                    continue
-//                }
-//                if (readCount != 0 && readCount != -1) {
-//                    audioTrack.write(tempBuffer, 0, readCount)
-//                }
-//            }
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-
+    private fun playAudioFile() {
+        val videoPath2 =
+            Environment.getExternalStorageDirectory().toString() + "/testMPEG/record_temp_agc.pcm"
+        val file = File(videoPath2)
+        try {
+            val fileInputStream = FileInputStream(file)
+            while (fileInputStream.available() > 0) {
+                val readCount = fileInputStream.read(tempBuffer)
+                if (readCount == AudioTrack.ERROR_INVALID_OPERATION ||
+                    readCount == AudioTrack.ERROR_BAD_VALUE
+                ) {
+                    continue
+                }
+                if (readCount != 0 && readCount != -1) {
+                    audioTrack.write(tempBuffer, 0, readCount)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
     }
 
@@ -180,7 +185,7 @@ class MainActivity : AppCompatActivity() {
             }
             FFUtils.popQueue()
             val array = FFUtils.testByteArray()
-            dashboardHandler.post { audioTrack.write(array,0, array.size) }
+            dashboardHandler.post { audioTrack.write(array, 0, array.size) }
             count += 1
             Log.d(TAG, "------startCount2 count $count")
         }
