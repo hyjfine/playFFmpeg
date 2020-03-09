@@ -920,7 +920,8 @@ AVFrameSideData *av_frame_get_side_data(const AVFrame *frame,
                                         enum AVFrameSideDataType type);
 
 /**
- * Remove and free all side data instances of the given type.
+ * If side data of the supplied type exists in the frame, free it and remove it
+ * from the frame.
  */
 void av_frame_remove_side_data(AVFrame *frame, enum AVFrameSideDataType type);
 

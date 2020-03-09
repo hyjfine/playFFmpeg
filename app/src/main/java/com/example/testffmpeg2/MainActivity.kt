@@ -184,8 +184,8 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             FFUtils.popQueue()
-            val array = FFUtils.testByteArray()
-            dashboardHandler.post { audioTrack.write(array, 0, array.size) }
+//            val array = FFUtils.testByteArray()
+//            dashboardHandler.post { audioTrack.write(array, 0, array.size) }
             count += 1
             Log.d(TAG, "------startCount2 count $count")
         }

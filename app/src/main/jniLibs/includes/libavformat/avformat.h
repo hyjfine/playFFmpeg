@@ -715,7 +715,8 @@ typedef struct AVInputFormat {
      * AVFMTCTX_NOHEADER is used and only in the calling thread (not in a
      * background thread).
      * @return 0 on success, < 0 on error.
-     *         Upon returning an error, pkt must be unreferenced by the caller.
+     *         When returning an error, pkt must not have been allocated
+     *         or must be freed before returning
      */
     int (*read_packet)(struct AVFormatContext *, AVPacket *pkt);
 
@@ -1950,13 +1951,6 @@ typedef struct AVFormatContext {
      * - decoding: set by user
      */
     int skip_estimate_duration_from_pts;
-
-    /**
-     * Maximum number of packets that can be probed
-     * - encoding: unused
-     * - decoding: set by user
-     */
-    int max_probe_packets;
 } AVFormatContext;
 
 #if FF_API_FORMAT_GET_SET

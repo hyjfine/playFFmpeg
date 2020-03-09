@@ -1,6 +1,7 @@
 //
 // Created by hyjfine on 2020/2/29.
 //
+#include <android/log.h>
 #ifndef TEST_FFMPEG_LOG_UTIL_H
 #define TEST_FFMPEG_LOG_UTIL_H
 #define LOG_TAG "JNI Call"
