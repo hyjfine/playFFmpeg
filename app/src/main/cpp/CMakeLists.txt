@@ -5,8 +5,8 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -v")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions -Wall -v")
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
@@ -19,7 +19,7 @@ include_directories(${jni_libs_dir}/includes)
 
 set(
         ffmpeg_libs_names  # List variable name
-        avutil avformat avcodec swresample swscale  # Values in the list
+        avutil avformat avcodec swresample swscale wkmedia # Values in the list
 )
 
 foreach (ffmpeg_lib_name ${ffmpeg_libs_names})
@@ -42,10 +42,10 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
 
-        core_player.c
-        test_player.c
-        Muxer.c
-        NALUParser.c
+#        core_player.c
+#        test_player.c
+#        Muxer.c
+#        NALUParser.c
         native-lib.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a

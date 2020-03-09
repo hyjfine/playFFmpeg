@@ -22,9 +22,11 @@ extern "C" {
 #include "libavutil/opt.h"
 #include <libavutil/imgutils.h>
 
-#include "Muxer.h"
-#include "NALUParser.h"
-#include "core_player.h"
+//#include "Muxer.h"
+//#include "NALUParser.h"
+//#include "core_player.h"
+#include "media/nalu_parser.h"
+#include "media/player.h"
 
 }
 
@@ -196,7 +198,8 @@ render_frame_data(RenderFrameVideo renderFrameVideo) {
 }
 
 static void
-queue_data_add_video(void *opaque, uint8_t *const data[8], const int size[8]) {
+queue_data_add_video(void *opaque, uint8_t *const data[8], const int size[8], int64_t pts,
+                     int width, int height) {
     RenderFrameVideo frameVideo = RenderFrameVideo();
     frameVideo.data[0] = (uint8_t *) (malloc(size[0] * 1376));
 //    frameVideo.data[1] = static_cast<uint8_t *>(malloc(size[1] * 1376));
@@ -214,7 +217,7 @@ queue_data_add_video(void *opaque, uint8_t *const data[8], const int size[8]) {
 //    memcpy(frameVideo.data, data, sizeof(uint8_t) * 8);
 //    memcpy(frameVideo.size, size, sizeof(int) * 8);
     queueVideo.push(frameVideo);
-    LOGD("-------queue data size %ld", queueVideo.size());
+    LOGD("-------queue data size %ld pts %d width %d", queueVideo.size(), pts, width);
 }
 
 extern "C"
@@ -260,17 +263,17 @@ Java_com_example_testffmpeg2_FFUtils_playVideo2(JNIEnv *env, jclass clazz, jstri
     fread(data, length, 1, file);
     fclose(file);
 
-    PlayerContext *context = NULL;
+    PlayerConfig *context = NULL;
     Player *player = player_alloc(&context);
     context->video_callback = queue_data_add_video;
 //    context->video_callback = render_frame;
     player_open(player);
 
-    NaluParser *parser = parser_alloc();
+    NaluParser *parser = nalu_parser_alloc();
     parser->opaque = player;
     parser->callback = parser_callback;
 
-    parser_parse(parser, data, length);
+    nalu_parser_parse(parser, data, length);
 
     player_close(player);
     player_free(&player);
@@ -508,11 +511,12 @@ Java_com_example_testffmpeg2_FFUtils_makeMp4(JNIEnv *env, jclass clazz, jstring 
     uint8_t *data = (uint8_t *) malloc(length);
     fread(data, length, 1, file);
 
-    Muxer *muxer = muxer_alloc("/storage/emulated/0/testMPEG/testMuxer1.mp4");
-    muxer_open(muxer);
-    int ret = muxer_write_video_frame(muxer, data, length);
-    muxer_close(muxer);
-    muxer_free(muxer);
+//    Muxer *muxer = muxer_alloc("/storage/emulated/0/testMPEG/testMuxer1.mp4");
+//    muxer_open(muxer);
+    int ret = 0;
+//    int ret = muxer_write_video_frame(muxer, data, length);
+//    muxer_close(muxer);
+//    muxer_free(muxer);
     LOGD("-----makeMp4 %u length %li", ret, length);
 
 }
