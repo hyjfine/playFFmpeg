@@ -9,6 +9,7 @@
 #ifndef muxer_h
 #define muxer_h
 
+#include <stdlib.h>
 #include <stdint.h>
 
 typedef struct Muxer Muxer;

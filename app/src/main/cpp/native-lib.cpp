@@ -220,6 +220,12 @@ queue_data_add_video(void *opaque, uint8_t *const data[8], const int size[8], in
     LOGD("-------queue data size %ld pts %d width %d", queueVideo.size(), pts, width);
 }
 
+static void
+audio_callback(void *opaque, uint8_t *const data[8], const int size[8], int64_t pts){
+
+}
+
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_testffmpeg2_FFUtils_playVideo2(JNIEnv *env, jclass clazz, jstring video_path,
@@ -263,10 +269,12 @@ Java_com_example_testffmpeg2_FFUtils_playVideo2(JNIEnv *env, jclass clazz, jstri
     fread(data, length, 1, file);
     fclose(file);
 
-    PlayerConfig *context = NULL;
-    Player *player = player_alloc(&context);
-    context->video_callback = queue_data_add_video;
-//    context->video_callback = render_frame;
+    PlayerConfig context = {.pixel_format = PixelFormatRGBA,
+            .opaque = NULL,
+            .audio_callback = audio_callback,
+            .video_callback = queue_data_add_video};
+
+    Player *player = player_alloc(context);
     player_open(player);
 
     NaluParser *parser = nalu_parser_alloc();

@@ -9,6 +9,7 @@
 #ifndef player_h
 #define player_h
 
+#include <stdlib.h>
 #include <stdint.h>
 
 typedef enum PixelFormat {
@@ -25,7 +26,7 @@ typedef struct PlayerConfig {
 
 typedef struct Player Player;
 
-Player *player_alloc(PlayerConfig **config);
+Player *player_alloc(PlayerConfig config);
 void player_free(Player **player);
 int player_open(Player *player);
 void player_close(Player *player);

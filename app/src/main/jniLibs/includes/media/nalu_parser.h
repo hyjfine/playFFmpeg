@@ -9,6 +9,7 @@
 #ifndef nalu_parser_h
 #define nalu_parser_h
 
+#include <stdlib.h>
 #include <stdint.h>
 
 typedef enum NaluType {
